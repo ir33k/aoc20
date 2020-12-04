@@ -6,8 +6,7 @@
 
 int
 is_digit(char c) {
-  return (c == '0' || c == '1' || c == '2' || c == '3' || c == '4' ||
-          c == '5' || c == '6' || c == '7' || c == '8' || c == '9');
+  return c >= '0' && c <= '9';
 }
 
 int
@@ -87,10 +86,8 @@ is_field_value_correct(char type[4], char value[32]) {
   if (strcmp("hcl", type) == 0) {
     if (value[0] == '#' && length == 7) {
       for (i=1; i<length; i++) {
-        if (!(is_digit(value[i]) || value[i] == 'a' ||
-              value[i] == 'b' || value[i] == 'c' ||
-              value[i] == 'd' || value[i] == 'e' ||
-              value[i] == 'f')) {
+        if (!(is_digit(value[i]) ||
+              (value[i] >= 'a' && value[i] <= 'f'))) {
           return 0;
         }
       }
