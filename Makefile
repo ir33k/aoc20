@@ -3,3 +3,4 @@ CC = gcc
 
 $(TARGET): $(TARGET).c
 	$(CC) $(CFLAGS) -o $@ $^
+	./$@
