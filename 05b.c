@@ -49,7 +49,7 @@ main() {
 
   FILE * file = fopen("05input1", "r");
   char line[12];
-  int result = 0;
+  int result;
   int highest_id = 0;
 
   int id_flags[2048] = { 0 };
@@ -68,6 +68,7 @@ main() {
   printf("Highest id: %d\n", highest_id);
 
   /* Search for missing ID */
+  result = 0;
   while(start_searching == 0 || id_flags[result] == 1) {
     if (id_flags[result] == 1) start_searching = 1;
     result++;
