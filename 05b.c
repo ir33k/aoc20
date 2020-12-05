@@ -52,6 +52,7 @@ main() {
   int result;
   int highest_id = 0;
 
+  int i;
   int id_flags[2048] = { 0 };
   int start_searching = 0;
 
@@ -68,12 +69,10 @@ main() {
   printf("Highest id: %d\n", highest_id);
 
   /* Search for missing ID */
-  result = 0;
-  while(start_searching == 0 || id_flags[result] == 1) {
-    if (id_flags[result] == 1) start_searching = 1;
-    result++;
-  }
-  printf("Missing id: %d\n", result);
+  for (i = 0; start_searching == 0 || id_flags[i] == 1; i++)
+    if (id_flags[i] == 1) start_searching = 1;
+
+  printf("Missing id: %d\n", i);
 
   fclose(file);
   return 0;
