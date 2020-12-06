@@ -40,7 +40,7 @@ solve1(char file_path[32]) {
   }
 
   fclose(file);
-  return result += strlen(questions_list);
+  return result;
 }
 
 int
