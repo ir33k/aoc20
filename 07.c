@@ -171,5 +171,6 @@ int
 main() {
   printf("expected   4, got %d\n", solve1("07i1"));
   printf("expected 370, got %d\n", solve1("07i2"));
+  printf("expected   0, got %d\n", solve1("07i3"));
   return 0;
 }
