@@ -16,11 +16,6 @@ typedef struct _bag {
 } bag;
 
 int
-bag_is_same(bag * a, bag * b) {
-  return strcmp(a->color, b->color) == 0;
-}
-
-int
 bag_index_of(bag bags[1024], int bags_count, char bag_color[32]) {
   for (int i=0; i<bags_count; i++) {
     if (strcmp(bags[i].color, bag_color) == 0)
@@ -31,7 +26,9 @@ bag_index_of(bag bags[1024], int bags_count, char bag_color[32]) {
 }
 
 void
-bag_unique_colors(char colors[600][32], int * colors_count, bag * current_bag) {
+bag_count_unique_parent_colors(int * colors_count,
+                               char colors[600][32],
+                               bag * current_bag) {
   int i,j;
 
   for (i=0; i<current_bag->parents_count; i++) {
@@ -47,7 +44,7 @@ bag_unique_colors(char colors[600][32], int * colors_count, bag * current_bag) {
       * colors_count += 1;
     }
 
-    bag_unique_colors(colors, colors_count, current_bag->parents[i]);
+    bag_count_unique_parent_colors(colors_count, colors, current_bag->parents[i]);
   }
 }
 
@@ -61,6 +58,7 @@ get_till_space(char target[32], char line[512], int start_index) {
 
   return ++i;
 }
+
 int
 bag_get_color(char target[32], char line[512], int start_index) {
   int i = start_index;
@@ -164,7 +162,7 @@ solve1(char input_file_path[8]) {
 
   char colors[600][32];
   index_of = bag_index_of(bags, bags_count, MY_BAG_COLOR);
-  bag_unique_colors(colors, &result, &bags[index_of]);
+  bag_count_unique_parent_colors(&result, colors, &bags[index_of]);
 
   return result;
 }
