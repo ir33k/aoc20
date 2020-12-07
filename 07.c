@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MY_BAG_COLOR "shiny gold"
+
 typedef struct _bag {
   char color[32];
   int parents_count;
@@ -28,6 +30,27 @@ bag_index_of(bag bags[1024], int bags_count, char bag_color[32]) {
   return -1;
 }
 
+void
+bag_unique_colors(char colors[600][32], int * colors_count, bag * current_bag) {
+  int i,j;
+
+  for (i=0; i<current_bag->parents_count; i++) {
+    for (j=0; j < * colors_count; j++) {
+      if (strcmp(colors[j], current_bag->parents[i]->color) == 0) {
+        j = -1;
+        break;
+      }
+    }
+
+    if (j > -1) {
+      strcpy(colors[j], current_bag->parents[i]->color);
+      * colors_count += 1;
+    }
+
+    bag_unique_colors(colors, colors_count, current_bag->parents[i]);
+  }
+}
+
 int
 get_till_space(char target[32], char line[512], int start_index) {
   int i = start_index;
@@ -38,7 +61,6 @@ get_till_space(char target[32], char line[512], int start_index) {
 
   return ++i;
 }
-
 int
 bag_get_color(char target[32], char line[512], int start_index) {
   int i = start_index;
@@ -62,7 +84,7 @@ skip_to_space(char line[512], int start_index) {
 int
 solve1(char input_file_path[8]) {
   int result = 0;
-  int i, j;
+  int i;
 
   FILE * file = fopen(input_file_path, "r");
   char line[512];
@@ -75,10 +97,8 @@ solve1(char input_file_path[8]) {
   bag * parent;
   bag * child;
 
-  /* bag my_bag = { "shiny gold" }; */
-
   while(fgets(line, sizeof line, file) != NULL) {
-    printf(">>>> %s", line);
+    /* printf(">>>> %s", line); */
     i = bag_get_color(bag_color, line, 0);
 
     if ((index_of = bag_index_of(bags, bags_count, bag_color)) < 0) {
@@ -91,15 +111,12 @@ solve1(char input_file_path[8]) {
       parent = &bags[index_of];
     }
 
-    /* printf(">> %s\n", parent->color); */
-
     i = skip_to_space(line, i);
     i = skip_to_space(line, i);
 
     if (line[i] == 'n') continue;
 
     while (1) {
-      /* TODO I forgot to sotre number_str in bag struct */
       i = get_till_space(number_str, line, i);
       i = bag_get_color(bag_color, line, i);
       i = skip_to_space(line, i);
@@ -121,33 +138,40 @@ solve1(char input_file_path[8]) {
       parent->childs[parent->childs_count].bag = child;
       parent->childs_count++;
 
-      /* printf("%s %s\n", number_str, bag_color); */
       if (i < 0) break;
     }
   }
 
-  for (i=0; i<bags_count; i++) {
-    printf("%s %d %d\n",
-           bags[i].color,
-           bags[i].parents_count,
-           bags[i].childs_count);
-
-    for (j=0; j<bags[i].parents_count; j++)
-      printf("  P %d %s\n", j, bags[i].parents[j]->color);
-
-    for (j=0; j<bags[i].childs_count; j++)
-      printf("  C %d (%d) %s\n", j,
-             bags[i].childs[j].count,
-             bags[i].childs[j].bag->color);
-  }
-
   fclose(file);
+
+  /* debug prints */
+  /* for (i=0; i<bags_count; i++) { */
+  /*   int j; */
+
+  /*   printf("%s %d %d\n", */
+  /*          bags[i].color, */
+  /*          bags[i].parents_count, */
+  /*          bags[i].childs_count); */
+
+  /*   for (j=0; j<bags[i].parents_count; j++) */
+  /*     printf("  P %d %s\n", j, bags[i].parents[j]->color); */
+
+  /*   for (j=0; j<bags[i].childs_count; j++) */
+  /*     printf("  C %d (%d) %s\n", j, */
+  /*            bags[i].childs[j].count, */
+  /*            bags[i].childs[j].bag->color); */
+  /* } */
+
+  char colors[600][32];
+  index_of = bag_index_of(bags, bags_count, MY_BAG_COLOR);
+  bag_unique_colors(colors, &result, &bags[index_of]);
+
   return result;
 }
 
 int
 main() {
-  printf("expected    4, got %d\n", solve1("07i1"));
-  /* printf("expected 365?, got %d\n", solve1("07i2")); */
+  printf("expected   4, got %d\n", solve1("07i1"));
+  printf("expected 370, got %d\n", solve1("07i2"));
   return 0;
 }
