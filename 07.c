@@ -19,35 +19,39 @@ typedef struct {
 } bag_rule;
 
 int
-can_have_bag(bag * target_bag,
+bag_is_same(bag * a, bag * b) {
+  return (strcmp(a->type, b->type) == 0 &&
+	  strcmp(a->color, b->color) == 0);
+}
+
+int
+bag_can_have(bag * target_bag,
              size_t * bag_rules_count,
              bag_rule bag_rules[600],
              bag * target_rule) {
   size_t i, j;
 
   for (i=0; i<*bag_rules_count; i++) {
-    if (strcmp(bag_rules[i].root.type, target_rule->type) == 0 &&
-        strcmp(bag_rules[i].root.color, target_rule->color) == 0) {
-      printf("%ld %s %s\n", i, bag_rules[i].root.type, bag_rules[i].root.color);
+    if (bag_is_same(&bag_rules[i].root, target_rule)) {
+      /* printf("%ld %s %s\n", i, bag_rules[i].root.type, bag_rules[i].root.color); */
       for (j=0; j<bag_rules[i].childs_count; j++) {
-        printf("  %ld %s %s == %s %s\n", j,
-               bag_rules[i].childs[j].bag.type,
-               bag_rules[i].childs[j].bag.color,
-               target_bag->type, target_bag->color);
-        if ((strcmp(bag_rules[i].childs[j].bag.type, target_bag->type) == 0 &&
-             strcmp(bag_rules[i].childs[j].bag.color, target_bag->color) == 0) ||
-            can_have_bag(target_bag,
+        /* printf("  %ld %s %s == %s %s\n", j, */
+        /*        bag_rules[i].childs[j].bag.type, */
+        /*        bag_rules[i].childs[j].bag.color, */
+        /*        target_bag->type, target_bag->color); */
+        if (bag_is_same(&bag_rules[i].childs[j].bag, target_bag) ||
+            bag_can_have(target_bag,
                          bag_rules_count,
                          bag_rules,
                          &bag_rules[i].childs[j].bag)) {
-          printf("->1 \n");
+          /* printf("->1 \n"); */
           return 1;
         }
       }
     }
   }
 
-  printf("->0 \n");
+  /* printf("->0 \n"); */
   return 0;
 }
 
@@ -125,25 +129,25 @@ solve1(char input_file_path[8]) {
   fclose(file);
 
   /* debug print after parse */
-  for (i=0; i<bag_rules_count; i++) {
-    printf("%s %s:",
-           bag_rules[i].root.type,
-           bag_rules[i].root.color);
+  /* for (i=0; i<bag_rules_count; i++) { */
+  /*   printf("%s %s:", */
+  /*          bag_rules[i].root.type, */
+  /*          bag_rules[i].root.color); */
 
-    for (j=0; j<bag_rules[i].childs_count; j++) {
-      printf(" (%d %s %s)",
-             bag_rules[i].childs[j].count,
-             bag_rules[i].childs[j].bag.type,
-             bag_rules[i].childs[j].bag.color);
-    }
+  /*   for (j=0; j<bag_rules[i].childs_count; j++) { */
+  /*     printf(" (%d %s %s)", */
+  /*            bag_rules[i].childs[j].count, */
+  /*            bag_rules[i].childs[j].bag.type, */
+  /*            bag_rules[i].childs[j].bag.color); */
+  /*   } */
 
-    printf("\n");
-  }
+  /*   printf("\n"); */
+  /* } */
 
   /* search for my_bag recursively */
   for (i=0; i<bag_rules_count; i++) {
-    printf("---\n");
-    result += can_have_bag(&my_bag,
+    /* printf("---\n"); */
+    result += bag_can_have(&my_bag,
                            &bag_rules_count,
                            bag_rules,
                            &bag_rules[i].root);
@@ -154,7 +158,7 @@ solve1(char input_file_path[8]) {
 
 int
 main() {
-  printf("expected 4, got %d\n", solve1("07i1"));
+  printf("expected    4, got %d\n", solve1("07i1"));
   printf("expected 365?, got %d\n", solve1("07i2")); /* too low */
   return 0;
 }
