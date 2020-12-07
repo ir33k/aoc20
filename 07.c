@@ -2,163 +2,152 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct {
-  char type[16];              /* light, dotted, faded */
-  char color[16];
+typedef struct _bag {
+  char color[32];
+  int parents_count;
+  int childs_count;
+  struct _bag * parents[64];
+  struct {
+    int count;
+    struct _bag * bag;
+  } childs[64];
 } bag;
-
-typedef struct {
-  unsigned int count;
-  bag bag;
-} bag_child;
-
-typedef struct {
-  bag root;
-  bag_child childs[16];
-  unsigned int childs_count;
-} bag_rule;
 
 int
 bag_is_same(bag * a, bag * b) {
-  return (strcmp(a->type, b->type) == 0 &&
-	  strcmp(a->color, b->color) == 0);
+  return strcmp(a->color, b->color) == 0;
 }
 
 int
-bag_can_have(bag * target_bag,
-             size_t * bag_rules_count,
-             bag_rule bag_rules[600],
-             bag * target_rule) {
-  size_t i, j;
-
-  for (i=0; i<*bag_rules_count; i++) {
-    if (bag_is_same(&bag_rules[i].root, target_rule)) {
-      /* printf("%ld %s %s\n", i, bag_rules[i].root.type, bag_rules[i].root.color); */
-      for (j=0; j<bag_rules[i].childs_count; j++) {
-        /* printf("  %ld %s %s == %s %s\n", j, */
-        /*        bag_rules[i].childs[j].bag.type, */
-        /*        bag_rules[i].childs[j].bag.color, */
-        /*        target_bag->type, target_bag->color); */
-        if (bag_is_same(&bag_rules[i].childs[j].bag, target_bag) ||
-            bag_can_have(target_bag,
-                         bag_rules_count,
-                         bag_rules,
-                         &bag_rules[i].childs[j].bag)) {
-          /* printf("->1 \n"); */
-          return 1;
-        }
-      }
-    }
+bag_index_of(bag bags[1024], int bags_count, char bag_color[32]) {
+  for (int i=0; i<bags_count; i++) {
+    if (strcmp(bags[i].color, bag_color) == 0)
+      return i;
   }
 
-  /* printf("->0 \n"); */
-  return 0;
+  return -1;
+}
+
+int
+get_till_space(char target[32], char line[512], int start_index) {
+  int i = start_index;
+  int j = 0;
+
+  for (j=0; line[i] != ' '; i++,j++) target[j] = line[i];
+  target[j] = 0;
+
+  return ++i;
+}
+
+int
+bag_get_color(char target[32], char line[512], int start_index) {
+  int i = start_index;
+  int j = 0;
+
+  for (j=0; line[i] != ' '; i++,j++) target[j] = line[i];
+  target[j] = line[i];     /* add space */
+  for (++i,++j; line[i] != ' '; i++,j++) target[j] = line[i];
+  target[j] = 0;
+
+  return ++i;
+}
+
+int
+skip_to_space(char line[512], int start_index) {
+  int i = start_index;
+  while (line[i] != ' ' && line[i] != '.') i++;
+  return line[i] == '.' ? -1 : ++i;
 }
 
 int
 solve1(char input_file_path[8]) {
   int result = 0;
-  size_t i, j;
+  int i, j;
 
   FILE * file = fopen(input_file_path, "r");
   char line[512];
 
+  char bag_color[32];
   char number_str[8];
-  bag_rule bag_rules[600];
-  size_t bag_rules_count = 0;
+  bag bags[1024];
+  int bags_count = 0;
+  int index_of;
+  bag * parent;
+  bag * child;
 
-  bag my_bag = { "shiny", "gold" };
+  /* bag my_bag = { "shiny gold" }; */
 
-  /* parse input to gab_rules structure */
   while(fgets(line, sizeof line, file) != NULL) {
-    /* get root bag type */
-    for (i=0,j=0; line[i] != ' '; i++,j++)
-      bag_rules[bag_rules_count].root.type[j] = line[i];
+    printf(">>>> %s", line);
+    i = bag_get_color(bag_color, line, 0);
 
-    /* get root bag color */
-    for (i++,j=0; line[i] != ' '; i++,j++)
-      bag_rules[bag_rules_count].root.color[j] = line[i];
-
-    while (line[++i] != ' ');   /* skip "bags" */
-    while (line[++i] != ' ');   /* skip "contains */
-    i++;                        /* skip space */
-
-    bag_rules[bag_rules_count].childs_count = 0;
-
-    /* Get childs if next part of the string is not "no other bags" */
-    if (line[i] == 'n') {
-      bag_rules_count++;
-      continue;
+    if ((index_of = bag_index_of(bags, bags_count, bag_color)) < 0) {
+      strcpy(bags[bags_count].color, bag_color);
+      bags[bags_count].parents_count = 0;
+      bags[bags_count].childs_count = 0;
+      parent = &bags[bags_count];
+      bags_count++;
+    } else {
+      parent = &bags[index_of];
     }
+
+    /* printf(">> %s\n", parent->color); */
+
+    i = skip_to_space(line, i);
+    i = skip_to_space(line, i);
+
+    if (line[i] == 'n') continue;
 
     while (1) {
-      number_str[0] = 0;
+      /* TODO I forgot to sotre number_str in bag struct */
+      i = get_till_space(number_str, line, i);
+      i = bag_get_color(bag_color, line, i);
+      i = skip_to_space(line, i);
 
-      for (j=0; line[i] != ' '; i++,j++)
-        number_str[j] = line[i];
+      if ((index_of = bag_index_of(bags, bags_count, bag_color)) < 0) {
+        strcpy(bags[bags_count].color, bag_color);
+        bags[bags_count].parents_count = 0;
+        bags[bags_count].childs_count = 0;
+        child = &bags[bags_count];
+        bags_count++;
+      } else {
+        child = &bags[index_of];
+      }
 
-      bag_rules[bag_rules_count]
-        .childs[bag_rules[bag_rules_count].childs_count]
-        .count = atoi(number_str);
+      child->parents[child->parents_count] = parent;
+      child->parents_count++;
 
-      for (i++,j=0; line[i] != ' '; i++,j++)
-        bag_rules[bag_rules_count]
-          .childs[bag_rules[bag_rules_count].childs_count]
-          .bag.type[j] = line[i];
+      parent->childs[parent->childs_count].count = atoi(number_str);
+      parent->childs[parent->childs_count].bag = child;
+      parent->childs_count++;
 
-      for (i++,j=0; line[i] != ' '; i++,j++)
-        bag_rules[bag_rules_count]
-          .childs[bag_rules[bag_rules_count].childs_count]
-          .bag.color[j] = line[i];
-
-      bag_rules[bag_rules_count].childs_count++;
-
-      /* skip "bag[s][,.]" */
-      while (line[i] != ',' && line[i] != '.') i++;
-
-      /* break on line end */
-      if (line[i] == '.') break;
-
-      /* if there is still more childs then skip space */
-      i += 2;
+      /* printf("%s %s\n", number_str, bag_color); */
+      if (i < 0) break;
     }
+  }
 
-    bag_rules_count++;
+  for (i=0; i<bags_count; i++) {
+    printf("%s %d %d\n",
+           bags[i].color,
+           bags[i].parents_count,
+           bags[i].childs_count);
+
+    for (j=0; j<bags[i].parents_count; j++)
+      printf("  P %d %s\n", j, bags[i].parents[j]->color);
+
+    for (j=0; j<bags[i].childs_count; j++)
+      printf("  C %d (%d) %s\n", j,
+             bags[i].childs[j].count,
+             bags[i].childs[j].bag->color);
   }
 
   fclose(file);
-
-  /* debug print after parse */
-  /* for (i=0; i<bag_rules_count; i++) { */
-  /*   printf("%s %s:", */
-  /*          bag_rules[i].root.type, */
-  /*          bag_rules[i].root.color); */
-
-  /*   for (j=0; j<bag_rules[i].childs_count; j++) { */
-  /*     printf(" (%d %s %s)", */
-  /*            bag_rules[i].childs[j].count, */
-  /*            bag_rules[i].childs[j].bag.type, */
-  /*            bag_rules[i].childs[j].bag.color); */
-  /*   } */
-
-  /*   printf("\n"); */
-  /* } */
-
-  /* search for my_bag recursively */
-  for (i=0; i<bag_rules_count; i++) {
-    /* printf("---\n"); */
-    result += bag_can_have(&my_bag,
-                           &bag_rules_count,
-                           bag_rules,
-                           &bag_rules[i].root);
-  }
-
   return result;
 }
 
 int
 main() {
   printf("expected    4, got %d\n", solve1("07i1"));
-  printf("expected 365?, got %d\n", solve1("07i2")); /* too low */
+  /* printf("expected 365?, got %d\n", solve1("07i2")); */
   return 0;
 }
