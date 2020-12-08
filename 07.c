@@ -49,6 +49,18 @@ bag_count_unique_parent_colors(int * colors_count,
 }
 
 int
+bag_count_chinds_inside(bag * current_bag) {
+  int i, sum = 1;
+
+  for (i=0; i<current_bag->childs_count; i++) {
+    sum += current_bag->childs[i].count *
+      bag_count_chinds_inside(current_bag->childs[i].bag);
+  }
+
+  return sum;
+}
+
+int
 get_till_space(char target[32], char line[512], int start_index) {
   int i = start_index;
   int j = 0;
@@ -79,9 +91,8 @@ skip_to_space(char line[512], int start_index) {
   return line[i] == '.' ? -1 : ++i;
 }
 
-int
+void
 solve1(char input_file_path[8]) {
-  int result = 0;
   int i;
 
   FILE * file = fopen(input_file_path, "r");
@@ -161,16 +172,26 @@ solve1(char input_file_path[8]) {
   /* } */
 
   char colors[600][32];
-  index_of = bag_index_of(bags, bags_count, MY_BAG_COLOR);
-  bag_count_unique_parent_colors(&result, colors, &bags[index_of]);
+  int unique_parents_count = 0;
+  int childs_inside_count = 0;
 
-  return result;
+  index_of = bag_index_of(bags, bags_count, MY_BAG_COLOR);
+
+  /* First solution */
+  bag_count_unique_parent_colors(&unique_parents_count, colors, &bags[index_of]);
+  printf("unique parents: %d\n", unique_parents_count);
+
+  /* Second solution */
+  childs_inside_count = bag_count_chinds_inside(&bags[index_of]);
+  childs_inside_count--;	/* Remove one bag (my bag) */
+
+  printf("childs inside: %d\n\n", childs_inside_count);
 }
 
 int
 main() {
-  printf("expected   4, got %d\n", solve1("07i1"));
-  printf("expected 370, got %d\n", solve1("07i2"));
-  printf("expected   0, got %d\n", solve1("07i3"));
+  solve1("07i1");		/* 4, 32 */
+  solve1("07i2");		/* 370, 29547 */
+  solve1("07i3");		/* 0, 126 */
   return 0;
 }
