@@ -35,8 +35,10 @@ parse_input(instruction instructions[MAX_INSTRUCTIONS], char file_name[8]) {
 }
 
 int
-check(instruction instructions[MAX_INSTRUCTIONS], int instructions_count,
-      int i, int * acc) {
+check(instruction instructions[MAX_INSTRUCTIONS],
+      int instructions_count, int * acc) {
+  int i = 0;
+
   while (i < instructions_count) {
     if (instructions[i].visited) return 0;
 
@@ -45,6 +47,7 @@ check(instruction instructions[MAX_INSTRUCTIONS], int instructions_count,
     if (instructions[i].type == 'j') i    += instructions[i].value - 1;
     i++;
   }
+
   return 1;
 }
 
@@ -53,10 +56,15 @@ solve1(char file_name[8]) {
   instruction instructions[MAX_INSTRUCTIONS];
   int instructions_count = parse_input(instructions, file_name);
   int acc = 0;
-  check(instructions, instructions_count, 0, &acc);
+  check(instructions, instructions_count, &acc);
   return acc;
 }
 
+void
+instruction_switch_type(instruction * a) {
+  /**/ if (a->type == 'j') a->type = 'n';
+  else if (a->type == 'n') a->type = 'j';
+}
 
 int
 solve2(char file_name[8]) {
@@ -71,20 +79,17 @@ solve2(char file_name[8]) {
     i = change_index;
 
     while (instructions[i].type == 'a') i++;
-
-    instructions[i].type = instructions[i].type == 'j' ? 'n': 'j';
+    instruction_switch_type(&instructions[i]);
     change_index = i;
 
-    if (check(instructions, instructions_count, 0, &acc)) break;
+    if (check(instructions, instructions_count, &acc)) break;
 
     for (i=0; instructions[i].visited == 1; i++) {
       instructions[i].visited = 0;
       if (instructions[i].type == 'j') i += instructions[i].value - 1;
     }
 
-    instructions[change_index].type =
-      instructions[change_index].type == 'j' ? 'n': 'j';
-
+    instruction_switch_type(&instructions[change_index]);
     change_index++;
   }
 
