@@ -1,23 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MAX_INSTRUCTIONS 650
+#define MAX_LINE_LENGTH 32
+
 typedef struct {
   char type;
   int value;
 } instruction;
 
 int
-solve1(char file_name[8]) {
+parse_input(instruction instructions[MAX_INSTRUCTIONS],
+            char file_name[8]) {
+  int i,j;
+
   FILE * file = fopen(file_name, "r");
-  char line[32];
+  char line[MAX_LINE_LENGTH];
 
   char number_char[8];
-  instruction instructions[650];
-  int i,j;
   int instructions_count = 0;
-  int visited[650];
-  int visited_count = 0;
-  int acc = 0;
 
   if (file == NULL) return -1;
 
@@ -44,7 +45,16 @@ solve1(char file_name[8]) {
   /*          instructions[i].type, */
   /*          instructions[i].value); */
 
-  /* printf("---\n");  */
+  return instructions_count;
+}
+
+int
+solve1(instruction instructions[MAX_INSTRUCTIONS]) {
+  int i, j;
+  int visited[650];
+  int visited_count = 0;
+  int acc = 0;
+
   i=0;
   while (1) {
     /* printf("%c: %d\t%d\n", */
@@ -59,12 +69,8 @@ solve1(char file_name[8]) {
     visited_count++;
 
     switch (instructions[i].type) {
-    case 'a':
-      acc += instructions[i].value;
-      break;
-    case 'j':
-      i += instructions[i].value;
-      continue;
+    case 'a': acc += instructions[i].value; break;
+    case 'j': i   += instructions[i].value; continue;
     }
 
     i++;
@@ -72,8 +78,23 @@ solve1(char file_name[8]) {
 }
 
 int
+solve2() {
+  return 0;
+}
+
+int
 main() {
-  printf("%d (5)\n", solve1("08i1"));
-  printf("%d (1744)\n", solve1("08i2"));
+  instruction instructions1[MAX_INSTRUCTIONS];
+  instruction instructions2[MAX_INSTRUCTIONS];
+
+  parse_input(instructions1, "08i1");
+  parse_input(instructions2, "08i2");
+
+  printf("%d (5)\n",    solve1(instructions1));
+  printf("%d (1744)\n", solve1(instructions2));
+
+  printf("%d (8)\n",    solve2(instructions1));
+  /* printf("%d (1744)\n", solve1(instructions2)); */
+
   return 0;
 }
