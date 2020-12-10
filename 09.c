@@ -30,27 +30,14 @@ find_invalid(const int preamble, const long int numbers[MAX_NUMBERS],
   int i,j,k;
 
   for (i=preamble; i<numbers_count; i++) {
-    for (j=i-preamble; j<i; j++) {
-      for (k=j+1; k<i; k++) {
-        if (numbers[j] + numbers[k] == numbers[i]) {
-          /*
-           * I often set loop index to -1 as indicator to code outside
-           * of this loop that loop was break.
-           */
-          k = -1;
-          break;
-        }
-      }
-
-      if (k == -1) {
-        j = -1;
-        break;
-      }
-    }
-
-    if (j != -1) return numbers[i];
+    for (j=i-preamble; j<i; j++)
+      for (k=j+1; k<i; k++)
+        if (numbers[j] + numbers[k] == numbers[i]) goto found1;
+    
+    return numbers[i];
+  found1: continue;
   }
-  
+
   return numbers[i];
 }
 
@@ -71,7 +58,6 @@ solve2(const int preamble, char file_name[8]) {
   int numbers_count = parse_input(numbers, file_name);
   long int invalid = find_invalid(preamble, numbers, numbers_count);
 
-  int found = 0;
   long int sum = 0;
   long int min = 0;
   long int max = 0;
@@ -80,13 +66,11 @@ solve2(const int preamble, char file_name[8]) {
     for (end=start+1; end<numbers_count; end++) {
       sum = 0;
       for (i=start; i<end; i++) sum += numbers[i];
-      if (sum == invalid) {
-        found = 1;
-        break;
-      }
+      if (sum == invalid) goto found;
     }
-    if (found) break;
   }
+
+ found:
 
   min = numbers[start];         /* min can't be initially 0 */
   for (i=start; i<end; i++) {
