@@ -32,10 +32,10 @@ find_invalid(const int preamble, const long int numbers[MAX_NUMBERS],
   for (i=preamble; i<numbers_count; i++) {
     for (j=i-preamble; j<i; j++)
       for (k=j+1; k<i; k++)
-        if (numbers[j] + numbers[k] == numbers[i]) goto found1;
+        if (numbers[j] + numbers[k] == numbers[i]) goto found;
     
     return numbers[i];
-  found1: continue;
+  found: continue;
   }
 
   return numbers[i];
