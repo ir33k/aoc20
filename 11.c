@@ -168,7 +168,7 @@ main() {
   printf("%ld (2108)\n", solve1("11i2"));
 
   printf("%ld (26)\n", solve2("11i1"));
-  printf("%ld (26)\n", solve2("11i2"));
+  printf("%ld (1897)\n", solve2("11i2"));
 
   return 0;
 }
