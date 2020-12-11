@@ -25,55 +25,49 @@ parse_input(char lines[MAX_LINES_COUNT][MAX_LINE_LENGTH],
 
 /* Position (x,y) have 0,0 coordinates in top left corner. */
 int
-count_neighbors(char input[MAX_LINES_COUNT][MAX_LINE_LENGTH],
-                int rows_count, int x, int y, char c) {
-  int count = 0;
-  int left  = x > 0;
-  int right = input[y][x+1];
-  int up    = y > 0;
-  int down  = y < rows_count - 1;
-                                                       /*  x, y */
-  if (left  && up   && input[y-1][x-1] == c) count ++; /* -1,-1 */
-  if (         up   && input[y-1][x  ] == c) count ++; /*  0,-1 */
-  if (right && up   && input[y-1][x+1] == c) count ++; /* +1,-1 */
-
-  if (left          && input[y  ][x-1] == c) count ++; /* -1, 0 */
-  if (right         && input[y  ][x+1] == c) count ++; /* +1, 0 */
-
-  if (left  && down && input[y+1][x-1] == c) count ++; /* -1,+1 */
-  if (         down && input[y+1][x  ] == c) count ++; /*  0,+1 */
-  if (right && down && input[y+1][x+1] == c) count ++; /* +1,+1 */
-
-  return count;
-}
-
-int
 is_seeted_in_directory(char input[MAX_LINES_COUNT][MAX_LINE_LENGTH],
-                       int rows_count, int x, int y, int dx, int dy) {
+                       int rows_count, int x, int y, int dx, int dy, int repeat) {
   x += dx;
   y += dy;
 
   if (x < 0 || y < 0 || y >= rows_count || input[y][x] == 0) return 0;
-  if (input[y][x] == 'L') return 0;
   if (input[y][x] == '#') return 1;
-  if (input[y][x] == '.') return is_seeted_in_directory(input, rows_count, x, y, dx, dy);
 
-  printf("I'm wandering why are you here <O.O>");
+  if (repeat) {
+    if (input[y][x] == 'L') return 0;
+    if (input[y][x] == '.')
+      return is_seeted_in_directory(input, rows_count, x, y, dx, dy, 1);
+  }
+
   return 0;
+}
+
+int
+count_neighbors(char input[MAX_LINES_COUNT][MAX_LINE_LENGTH],
+                int rows_count, int x, int y) {
+  return
+    is_seeted_in_directory(input, rows_count, x, y, -1, -1, 0) +
+    is_seeted_in_directory(input, rows_count, x, y,  0, -1, 0) +
+    is_seeted_in_directory(input, rows_count, x, y, +1, -1, 0) +
+    is_seeted_in_directory(input, rows_count, x, y, +1,  0, 0) +
+    is_seeted_in_directory(input, rows_count, x, y, +1, +1, 0) +
+    is_seeted_in_directory(input, rows_count, x, y,  0, +1, 0) +
+    is_seeted_in_directory(input, rows_count, x, y, -1, +1, 0) +
+    is_seeted_in_directory(input, rows_count, x, y, -1,  0, 0);
 }
 
 int
 count_visible(char input[MAX_LINES_COUNT][MAX_LINE_LENGTH],
               int rows_count, int x, int y) {
   return
-    is_seeted_in_directory(input, rows_count, x, y, -1, -1) +
-    is_seeted_in_directory(input, rows_count, x, y,  0, -1) +
-    is_seeted_in_directory(input, rows_count, x, y, +1, -1) +
-    is_seeted_in_directory(input, rows_count, x, y, +1,  0) +
-    is_seeted_in_directory(input, rows_count, x, y, +1, +1) +
-    is_seeted_in_directory(input, rows_count, x, y,  0, +1) +
-    is_seeted_in_directory(input, rows_count, x, y, -1, +1) +
-    is_seeted_in_directory(input, rows_count, x, y, -1,  0);
+    is_seeted_in_directory(input, rows_count, x, y, -1, -1, 1) +
+    is_seeted_in_directory(input, rows_count, x, y,  0, -1, 1) +
+    is_seeted_in_directory(input, rows_count, x, y, +1, -1, 1) +
+    is_seeted_in_directory(input, rows_count, x, y, +1,  0, 1) +
+    is_seeted_in_directory(input, rows_count, x, y, +1, +1, 1) +
+    is_seeted_in_directory(input, rows_count, x, y,  0, +1, 1) +
+    is_seeted_in_directory(input, rows_count, x, y, -1, +1, 1) +
+    is_seeted_in_directory(input, rows_count, x, y, -1,  0, 1);
 }
 
 void
@@ -129,7 +123,7 @@ solve1(char file_name[8]) {
   while (1) {
     for (y=0; y<rows_count; y++) {
       for (x=0; state1[0][x] != 0; x++) {
-        occupied = count_neighbors(state1, rows_count, x, y, '#');
+        occupied = count_neighbors(state1, rows_count, x, y);
         /**/ if (state1[y][x] == 'L' && occupied == 0) state2[y][x] = '#';
         else if (state1[y][x] == '#' && occupied >= 4) state2[y][x] = 'L';
       }
