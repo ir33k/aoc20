@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define INPUT_MAX_LENGTH 124
 #define INPUT_1_LENGTH 11
 #define INPUT_2_LENGTH 31
 #define INPUT_3_LENGTH 107
@@ -23,35 +24,75 @@ int input3[INPUT_3_LENGTH] = {
 };
 
 int
-cmpfunc (const void * a, const void * b) {
+cmpfunc(const void * a, const void * b) {
   return (*(int*)a - *(int*)b);
 }
 
 int
-solve1(int * input, int input_length) {
+prepare_input(int * output, int * input, int input_length) {
   int i;
+
+  /* sort */
+  qsort(input, input_length, sizeof (int), cmpfunc);
+
+  /* add initial 0 */
+  output[0] = 0;
+
+  /* put all values of input to output */
+  for (i=0; i<input_length; i++) output[i+1] = input[i];
+
+  /* last value max+3  */
+  output[input_length+1] = input[input_length-1] + 3;
+
+  /* return outpu array length */
+  return input_length+2;
+}
+
+int
+solve1(int * init_input, int init_length) {
+  int input[INPUT_MAX_LENGTH];
+  int input_length = prepare_input(input, init_input, init_length);
+
   int diff_1 = 0;
   int diff_3 = 0;
 
-  qsort(input, input_length, sizeof (int), cmpfunc);
-
-  /**/ if (input[0] == 1) diff_1++;
-  else if (input[0] == 3) diff_3++;
-  
-  for (i=1; i<input_length; i++) {
-    /**/ if (input[i] - input[i-1] == 1) diff_1++;
-    else if (input[i] - input[i-1] == 3) diff_3++;
-  }
-  diff_3++;
+  for (int i=1; i<input_length; i++)
+    (input[i] - input[i-1] == 1) ? diff_1++ : diff_3++;
 
   return diff_1 * diff_3;
 }
 
+unsigned long long int
+solve2(int * init_input, int init_length) {
+  int input[INPUT_MAX_LENGTH];
+  int input_length = prepare_input(input, init_input, init_length);
+
+  int i,j;
+  int diff_1_count = 0;
+  int tmp = 0;
+  unsigned long long int result = 1;
+  
+  for (i=1; i<input_length; i++) {
+    if (input[i] - input[i-1] == 1) {
+      diff_1_count++;
+    } else {
+      for (j=1; j<=diff_1_count-1; j++) tmp += j;
+      result *= tmp + 1;
+      diff_1_count = tmp = 0;
+    }
+  }
+
+  return result;
+}
+
 int
 main() {
-  printf("%d (7 * 5 = 35)\n", solve1(input1, INPUT_1_LENGTH));
-  printf("%d (22 * 10 = 220)\n", solve1(input2, INPUT_2_LENGTH));
-  printf("%d (72 * 36 = 2592)\n", solve1(input3, INPUT_3_LENGTH));
+  printf("%d (35)\n",   solve1(input1, INPUT_1_LENGTH));
+  printf("%d (220)\n",  solve1(input2, INPUT_2_LENGTH));
+  printf("%d (2592)\n", solve1(input3, INPUT_3_LENGTH));
 
+  printf("%lld (8)\n",               solve2(input1, INPUT_1_LENGTH));
+  printf("%lld (19208)\n",           solve2(input2, INPUT_2_LENGTH));
+  printf("%lld (198428693313536)\n", solve2(input3, INPUT_3_LENGTH));
   return 0;
 }
