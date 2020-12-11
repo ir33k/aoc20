@@ -47,6 +47,35 @@ count_neighbors(char input[MAX_LINES_COUNT][MAX_LINE_LENGTH],
   return count;
 }
 
+int
+is_seeted_in_directory(char input[MAX_LINES_COUNT][MAX_LINE_LENGTH],
+                       int rows_count, int x, int y, int dx, int dy) {
+  x += dx;
+  y += dy;
+
+  if (x < 0 || y < 0 || y >= rows_count || input[y][x] == 0) return 0;
+  if (input[y][x] == 'L') return 0;
+  if (input[y][x] == '#') return 1;
+  if (input[y][x] == '.') return is_seeted_in_directory(input, rows_count, x, y, dx, dy);
+
+  printf("I'm wandering why are you here <O.O>");
+  return 0;
+}
+
+int
+count_visible(char input[MAX_LINES_COUNT][MAX_LINE_LENGTH],
+              int rows_count, int x, int y) {
+  return
+    is_seeted_in_directory(input, rows_count, x, y, -1, -1) +
+    is_seeted_in_directory(input, rows_count, x, y,  0, -1) +
+    is_seeted_in_directory(input, rows_count, x, y, +1, -1) +
+    is_seeted_in_directory(input, rows_count, x, y, +1,  0) +
+    is_seeted_in_directory(input, rows_count, x, y, +1, +1) +
+    is_seeted_in_directory(input, rows_count, x, y,  0, +1) +
+    is_seeted_in_directory(input, rows_count, x, y, -1, +1) +
+    is_seeted_in_directory(input, rows_count, x, y, -1,  0);
+}
+
 void
 print_state(char input[MAX_LINES_COUNT][MAX_LINE_LENGTH],
             int rows_count) {
@@ -58,9 +87,11 @@ void
 clone_array(char input[MAX_LINES_COUNT][MAX_LINE_LENGTH],
             char target[MAX_LINES_COUNT][MAX_LINE_LENGTH],
             int rows_count) {
-  for (int x=0; input[0][x] != 0; x++)
-    for (int y=0; y<rows_count; y++)
-      target[y][x] = input[y][x];
+  int x,y;
+  for ( y=0; y<rows_count; y++) {
+    for (x=0; input[0][x] != 0; x++) target[y][x] = input[y][x];
+    target[y][x] = '\0';
+  }
 }
 
 int
@@ -95,9 +126,6 @@ solve1(char file_name[8]) {
 
   clone_array(state1, state2, rows_count);
 
-  /* print_state(state1, rows_count); */
-  /* printf("\n"); */
-
   while (1) {
     for (y=0; y<rows_count; y++) {
       for (x=0; state1[0][x] != 0; x++) {
@@ -107,11 +135,32 @@ solve1(char file_name[8]) {
       }
     }
   
-    /* print_state(state2, rows_count); */
-    /* printf("\n"); */
-
     if (are_arrays_the_same(state1, state2, rows_count)) break;
+    clone_array(state2, state1, rows_count);
+  }
 
+  return count_char(state1, rows_count, '#');
+}
+
+unsigned long int
+solve2(char file_name[8]) {
+  int x,y,occupied;
+  char state1[MAX_LINES_COUNT][MAX_LINE_LENGTH];
+  char state2[MAX_LINES_COUNT][MAX_LINE_LENGTH];
+  char rows_count = parse_input(state1, file_name);
+
+  clone_array(state1, state2, rows_count);
+
+  while (1) {
+    for (y=0; y<rows_count; y++) {
+      for (x=0; state1[0][x] != 0; x++) {
+        occupied = count_visible(state1, rows_count, x, y);
+        /**/ if (state1[y][x] == 'L' && occupied == 0) state2[y][x] = '#';
+        else if (state1[y][x] == '#' && occupied >= 5) state2[y][x] = 'L';
+      }
+    }
+  
+    if (are_arrays_the_same(state1, state2, rows_count)) break;
     clone_array(state2, state1, rows_count);
   }
 
@@ -122,5 +171,9 @@ int
 main() {
   printf("%ld (37)\n", solve1("11i1"));
   printf("%ld (2108)\n", solve1("11i2"));
+
+  printf("%ld (26)\n", solve2("11i1"));
+  printf("%ld (26)\n", solve2("11i2"));
+
   return 0;
 }
