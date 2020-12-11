@@ -26,7 +26,8 @@ parse_input(char lines[MAX_LINES_COUNT][MAX_LINE_LENGTH],
 /* Position (x,y) have 0,0 coordinates in top left corner. */
 int
 is_seeted_in_directory(char input[MAX_LINES_COUNT][MAX_LINE_LENGTH],
-                       int rows_count, int x, int y, int dx, int dy, int repeat) {
+                       int rows_count, int x, int y, int dx, int dy,
+                       int repeat) {
   x += dx;
   y += dy;
 
