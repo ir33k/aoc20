@@ -54,63 +54,78 @@ solve1(char file_name[8]) {
   return ids[min_index] * min;
 }
 
+/* https://www.geeksforgeeks.org/chinese-remainder-theorem-set-2-implementation/ */
+long long int
+inv(long long int a, long long int m) {
+  long long int m0 = m, t, q;
+  long long int x0 = 0, x1 = 1;
+
+  if (m == 1) return 0;
+
+  while (a > 1) {
+    q = a / m;
+    t = m;
+    m = a % m, a = t;
+    t = x0;
+    x0 = x1 - q * x0;
+    x1 = t;
+  }
+
+  if (x1 < 0) x1 += m0;
+
+  return x1;
+}
+
 unsigned long long int
-solve2(char ids_str[256], unsigned long long int result) {
+findMinX(int num[512], int rem[512], int k) {
+  int i;
+  unsigned long long int prod = 1;
+  unsigned long long int result = 0;
+
+  for (i = 0; i < k; i++)
+    prod *= num[i];
+
+  for (i = 0; i < k; i++) {
+    unsigned long long int pp = prod / num[i];
+    result += rem[i] * inv(pp, num[i]) * pp;
+  }
+
+  return result % prod;
+}
+
+unsigned long long int
+solve2(char input[256]) {
   int i=0, j;
-  struct { unsigned int id; unsigned int index; } ids[512];
-  int ids_count = 0;
+
+  int num[512];
+  int rem[512];
+  int num_count = 0;
+
   int index = 0;
   char number_char[16];
 
   while (1) {
-    if (ids_str[i] == 'x') {
+    if (input[i] == 'x') {
       index++;
       i += 2;
       continue;
     }
 
-    for (j=0; ids_str[i] != ',' && ids_str[i] != '\0'; i++,j++)
-      number_char[j] = ids_str[i];
+    for (j=0; input[i] != ',' && input[i] != '\0'; i++,j++)
+      number_char[j] = input[i];
     number_char[j] = 0;
 
-    ids[ids_count].id = atoi(number_char);
-    ids[ids_count].index = index;
+    num[num_count] = atoi(number_char);
+    rem[num_count] = num[num_count] - index;
 
-    ids_count++;
+    num_count++;
     index++;
 
-    if (ids_str[i] == '\0') break;
+    if (input[i] == '\0') break;
     i++;
   }
 
-  while (++result) {
-    if (result % ids[0].id != 0) {
-      result += ids[0].id - (result % ids[0].id) - 1;
-      continue;
-    }
-    /* printf("%d: %lld\n", ids[0].id, result); */
-    for (i=1; i<ids_count; i++) {
-      if (ids[i].index != ids[i].id - (result % ids[i].id)) {
-        result += ids[0].id - (result % ids[0].id) - 1;
-        /* printf("%d %d %lld %lld\n", */
-        /*        ids[i].id, */
-        /*        ids[i].index, */
-        /*        result, */
-        /*        result + ids[0].id - (result % ids[0].id) - 1); */
-        goto next;
-      }
-      /* printf("%d: %lld\n", ids[i].id, result); */
-    }
-    break;
-  next: continue;
-  }
-  
-  /* for (i=0; i<ids_count; i++) */
-  /*   printf("%d: %d\n", */
-  /*          ids[i].index, */
-  /*          ids[i].id); */
-
-  return result;
+  return findMinX(num, rem, num_count);
 }
 
 int
@@ -118,15 +133,15 @@ main() {
   printf("%d (295)\n", solve1("13i1"));
   printf("%d (207)\n", solve1("13i2"));
 
-  printf("%lld (1068781)\n", solve2("7,13,x,x,59,x,31,19", 0));
-  printf("%lld (3417)\n", solve2("17,x,13,19", 0));
-  printf("%lld (754018)\n", solve2("67,7,59,61", 0));
-  printf("%lld (779210)\n", solve2("67,x,7,59,61", 0));
-  printf("%lld (1261476)\n", solve2("67,7,x,59,61", 0));
-  printf("%lld (1202161486)\n", solve2("1789,37,47,1889", 0));
+  printf("%lld (3417)\n", solve2("17,x,13,19"));
+  printf("%lld (1068781)\n", solve2("7,13,x,x,59,x,31,19"));
+  printf("%lld (754018)\n", solve2("67,7,59,61"));
+  printf("%lld (779210)\n", solve2("67,x,7,59,61"));
+  printf("%lld (1261476)\n", solve2("67,7,x,59,61"));
+  printf("%lld (1202161486)\n", solve2("1789,37,47,1889"));
 
   /* this will take a long time */
-  /* printf("%lld ()\n", solve2("17,x,x,x,x,x,x,x,x,x,x,37,x,x,x,x,x,409,x,29,x,x,x,x,x,x,x,x,x,x,13,x,x,x,x,x,x,x,x,x,23,x,x,x,x,x,x,x,373,x,x,x,x,x,x,x,x,x,41,x,x,x,x,x,x,x,x,19", 100000000000000)); */
+  printf("%lld (530015546283687)\n", solve2("17,x,x,x,x,x,x,x,x,x,x,37,x,x,x,x,x,409,x,29,x,x,x,x,x,x,x,x,x,x,13,x,x,x,x,x,x,x,x,x,23,x,x,x,x,x,x,x,373,x,x,x,x,x,x,x,x,x,41,x,x,x,x,x,x,x,x,19"));
 
   return 0;
 }
