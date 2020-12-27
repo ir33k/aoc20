@@ -17,7 +17,6 @@ calc(char ** pt) {
 
       if (number_char_length > 0) {
         number_char[number_char_length] = 0;
-        printf("(%c %s) ", operator, number_char);
 
         /**/ if (result == 0)     result  = atoi(number_char);
         else if (operator == '+') result += atoi(number_char);
@@ -95,7 +94,7 @@ main() {
   printf("%lu (5)\n",     compute("(2) + (3)"));
   printf("%lu (17)\n",    compute("2 + (3 * (1 + 4 ) )"));
   printf("%lu (5)\n",     compute("((2) + (3))"));
-  printf("%lu (12)\n",    compute("((2) + (3 * 2))"));
+  printf("%lu (8)\n",     compute("((2) + (3 * 2))"));
 
   printf("%lu (26)\n",    compute("2 * 3 + (4 * 5)"));
   printf("%lu (437)\n",   compute("5 + (8 * 3 + 9 + 3 * 4 * 3)"));
