@@ -3,8 +3,10 @@
 #include <string.h>
 #include <math.h>
 
-typedef struct { int normal[4]; int fliped[4]; } Edges;
-typedef struct { int id; Edges edges; } Tile;
+typedef struct {
+  int id;
+  int edges[8];
+} Tile;
 
 int
 binary_string_to_decimal(char * str, int revers) {
@@ -49,15 +51,15 @@ parse_tile(Tile * tile, FILE * file) {
 
   line_top[i] = line_right[i] = line_bottom[i] = line_left[i] = 0;
 
-  tile->edges.normal[0] = binary_string_to_decimal(line_top, 0);
-  tile->edges.normal[1] = binary_string_to_decimal(line_right, 0);
-  tile->edges.normal[2] = binary_string_to_decimal(line_bottom, 0);
-  tile->edges.normal[3] = binary_string_to_decimal(line_left, 0);
+  tile->edges[0] = binary_string_to_decimal(line_top, 0);
+  tile->edges[1] = binary_string_to_decimal(line_right, 0);
+  tile->edges[2] = binary_string_to_decimal(line_bottom, 0);
+  tile->edges[3] = binary_string_to_decimal(line_left, 0);
 
-  tile->edges.fliped[0] = binary_string_to_decimal(line_top, 1);
-  tile->edges.fliped[1] = binary_string_to_decimal(line_right, 1);
-  tile->edges.fliped[2] = binary_string_to_decimal(line_bottom, 1);
-  tile->edges.fliped[3] = binary_string_to_decimal(line_left, 1);
+  tile->edges[4] = binary_string_to_decimal(line_top, 1);
+  tile->edges[5] = binary_string_to_decimal(line_right, 1);
+  tile->edges[6] = binary_string_to_decimal(line_bottom, 1);
+  tile->edges[7] = binary_string_to_decimal(line_left, 1);
 
   return 1;
 }
@@ -81,31 +83,58 @@ parse_input(Tile * tiles, char * file_name) {
 
 unsigned long long
 solve1(char file_name[6]) {
+  unsigned long long result = 1;
   Tile tiles[256] = { 0 };
   int tiles_count;
+  int found_repeat_flag;
+  int found_ids[4];
+  int found_ids_count = 0;
+  int i,j,k,l;
 
   tiles_count = parse_input(tiles, file_name);
 
-  /* 1951 2311 3079 */
-  /* 2729 1427 2473 */
-  /* 2971 1489 1171 */
+  // printf("Tiles count %d\n", tiles_count);
+  // for (i=0; i<tiles_count; i++) {
+  //   printf("Id: %d (", tiles[i].id);
+  //   for (j=0; j<8; j++) printf("%3d ", tiles[i].edges[j]);
+  //   printf("\b)\n");
+  // }
 
-  printf("Tiles count %d\n", tiles_count);
-  while (tiles_count--) {
-    printf("Id: %d\n", tiles[tiles_count].id);
-    printf("Normal: ");
-    for (int i=0; i<4; i++) printf("%d ", tiles[tiles_count].edges.normal[i]);
-    printf("\b\nFliped: ");
-    for (int i=0; i<4; i++) printf("%d ", tiles[tiles_count].edges.fliped[i]);
-    printf("\b\n");
+  for (i=0; i<tiles_count; i++) {
+    for (j=0; j<8; j++) {
+      found_repeat_flag = 0;
+
+      for (k=i+1; k<tiles_count; k++)
+        for (l=0; l<8; l++)
+          if (tiles[i].edges[j] == tiles[k].edges[l]) {
+            tiles[k].edges[l] = -1;
+            found_repeat_flag = 1;
+          }
+
+      if (found_repeat_flag)
+        tiles[i].edges[j] = -1;
+    }
   }
-  
-  return 0;
+
+  for (i=0; i<tiles_count; i++) {
+    k=0;
+    for (j=0; j<8; j++)
+      if (tiles[i].edges[j] == -1) k++;
+
+    if (k == 4)
+      found_ids[found_ids_count++] = tiles[i].id;
+  }
+
+  for (i=0; i<found_ids_count; i++)
+    result *= found_ids[i];
+
+  return result;
 }
 
 int
 main() {
   printf("%llu (20899048083289)\n", solve1("20i1"));
+  printf("%llu (45079100979683)\n", solve1("20i2"));
 
   return 0;
 }
