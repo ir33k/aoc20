@@ -9,6 +9,12 @@
 /* $ sed "s/(//g;s/)//g;s/,//g" 21i2 | tr " " "\n" | wc -L */
 #define MAX_WORD_LENGTH 10
 
+/* $ sed "s/(//g;s/)//g;s/,//g" 21i2 | tr " " "\n" | wc -l */
+#define MAX_INGREDIENTS_COUNT 2838
+
+char data_all_values[MAX_INGREDIENTS_COUNT][MAX_WORD_LENGTH];
+size_t data_all_values_count = 0;
+
 typedef struct {
   char ** ingredients_pt;
   size_t ingredients_count;
@@ -28,7 +34,10 @@ skip_to_next_word(char * line_pt) {
 }
 
 void
-parse_input(char * file_name, struct hashmap_s * data_pt) {
+parse_input(char * file_name,
+            struct hashmap_s * data_pt,
+            char ** ingredients_all_pt,
+            size_t * ingredients_all_count) {
   FILE * file = fopen(file_name, "r");
 
   if (file == NULL) {
@@ -54,14 +63,14 @@ parse_input(char * file_name, struct hashmap_s * data_pt) {
   Food * data_food_pt;
 
   while (fgets(line, sizeof line, file) != NULL) {
-    printf(">> %s", line);
+    /* printf(">> %s", line); */
 
     line_pt = line;
     ingredients_count = 0;
     collect_allergens_flag = 0;
 
     while (line_pt[0] != '\n') {
-      printf("line_pt: %s", line_pt);
+      /* printf("line_pt: %s", line_pt); */
 
       if (collect_allergens_flag) {
         sscanf(line_pt, "%[a-zA-Z]", allergen);
@@ -89,10 +98,10 @@ parse_input(char * file_name, struct hashmap_s * data_pt) {
         } else {
           data_food_pt = (Food *)data_element_pt;
 
-          printf("hashmap: key: '%s' ingredients: ", allergen);
-          for (i=0; i < data_food_pt->ingredients_count; i++)
-            printf("%s ", data_food_pt->ingredients_pt[i]);
-          printf("\b\n");
+          /* printf("hashmap: key: '%s' ingredients: ", allergen); */
+          /* for (i=0; i < data_food_pt->ingredients_count; i++) */
+          /*   printf("%s ", data_food_pt->ingredients_pt[i]); */
+          /* printf("\b\n"); */
 
           ingredients_new_count = 0;
 
@@ -105,10 +114,10 @@ parse_input(char * file_name, struct hashmap_s * data_pt) {
             }
           }
 
-          printf("ingredients_new: ");
-          for (i=0; i < ingredients_new_count; i++)
-            printf("%s ", ingredients_new[i]);
-          printf("\b\n");
+          /* printf("ingredients_new: "); */
+          /* for (i=0; i < ingredients_new_count; i++) */
+          /*   printf("%s ", ingredients_new[i]); */
+          /* printf("\b\n"); */
 
           free(data_food_pt->ingredients_pt);
           data_food_pt->ingredients_pt = malloc(ingredients_new_count * sizeof(char *));
@@ -120,8 +129,17 @@ parse_input(char * file_name, struct hashmap_s * data_pt) {
           }
         }
      } else {
-        sscanf(line_pt, "%s", ingredients[ingredients_count++]);
+        sscanf(line_pt, "%s", ingredients[ingredients_count]);
         line_pt = skip_to_next_word(line_pt);
+
+        ingredients_all_pt[*ingredients_all_count] =
+          malloc(strlen(ingredients[ingredients_count]));
+
+        strcpy(ingredients_all_pt[*ingredients_all_count],
+               ingredients[ingredients_count]);
+
+        ingredients_count++;
+        *ingredients_all_count += 1;
 
         /* End of ingredients, switch to allergens */
         if (line_pt[0] == '(') {
@@ -132,9 +150,9 @@ parse_input(char * file_name, struct hashmap_s * data_pt) {
       }
     }
 
-    printf("ingredients: ");
-    for (i=0; i<ingredients_count; i++) printf("%s ", ingredients[i]);
-    printf("\b\n");
+    /* printf("ingredients: "); */
+    /* for (i=0; i<ingredients_count; i++) printf("%s ", ingredients[i]); */
+    /* printf("\b\n"); */
   }
 
   fclose(file);
@@ -172,30 +190,79 @@ data_free_all(void * const context, struct hashmap_element_s * const element) {
   return -1;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+int
+data_collect_values(void * const context, void * const value) {
+#pragma GCC diagnostic pop
+  size_t i,j;
+  Food * food_pt = (Food *) value;
+
+  for (i=0; i<food_pt->ingredients_count; i++) {
+    for (j=0; j<data_all_values_count; j++) {
+      if (strcmp(data_all_values[j], food_pt->ingredients_pt[i]) == 0)
+        goto skip;
+    }
+    strcpy(data_all_values[data_all_values_count], food_pt->ingredients_pt[i]);
+    data_all_values_count++;
+  skip: continue;
+  }
+
+  return 1;
+}
+
 unsigned int
 solve1(char file_name[6]) {
-  unsigned int result = 0;
+  size_t i,j;
+  unsigned int result;
   struct hashmap_s data;
+  char ** ingredients_all_pt;
+  size_t ingredients_all_count = 0;
 
   if (0 != hashmap_create(2, &data)) {
     fprintf(stderr, "You shall not pass!  Error while creating hashmap.");
     exit(1);
   }
 
-  parse_input(file_name, &data);
+  ingredients_all_pt = malloc(MAX_INGREDIENTS_COUNT * sizeof(char *));
+  parse_input(file_name, &data, ingredients_all_pt, &ingredients_all_count);
 
-  printf("\n\n");
+  result = ingredients_all_count;
+
   if (0 != hashmap_iterate_pairs(&data, data_log_all, NULL)) {
     fprintf(stderr, "ERROR: data_log_all\n");
     exit(1);
   }
 
+  if (0 != hashmap_iterate(&data, data_collect_values, NULL)) {
+    fprintf(stderr, "ERROR: data_collect_values\n");
+    exit(1);
+  }
+
+  /* https://youtu.be/CA_N_QVxbKg?t=77 */
   if (0 != hashmap_iterate_pairs(&data, data_free_all, NULL)) {
     fprintf(stderr, "ERROR: data_free_all\n");
     exit(1);
   }
 
+  printf("ingredients_all: ");
+  for (i=0; i<ingredients_all_count; i++)
+    printf("'%s' ", ingredients_all_pt[i]);
+  printf("\b\n");
+
+  printf("data_all_values: ");
+  for (i=0; i<data_all_values_count; i++)
+    printf("'%s' ", data_all_values[i]);
+  printf("\b\n");
+
+  for (i=0; i<data_all_values_count; i++)
+    for (j=0; j<ingredients_all_count; j++)
+      if (strcmp(data_all_values[i], ingredients_all_pt[j]) == 0)
+        result--;
+
+  free(ingredients_all_pt);
   hashmap_destroy(&data);
+
   return result;
 }
 
@@ -210,6 +277,7 @@ main() {
    * Result: kfcds, nhms, sbzzf, sbzzf, trh => 5
    */
   printf("%d (5)\n", solve1("21i1"));
+  printf("%d (5)\n", solve1("21i2"));
 
   return 0;
 }
