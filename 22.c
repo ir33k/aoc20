@@ -46,15 +46,14 @@ ringbuffer_shift(struct ringbuffer * ringbuffer_pt) {
 void
 parse_player(FILE * file, struct ringbuffer * ringbuffer_pt) {
   char line[12];
-  int start_parsing_flag = 0;
   int value;
+ 
+ while (fgets(line, sizeof line, file) != NULL) {
+    if (line[0] == 'P')
+      break;
+  }
 
   while (fgets(line, sizeof line, file) != NULL) {
-    if (start_parsing_flag == 0 && (line[0] == 'P' || line[0] == '\n'))
-      continue;
-    else
-      start_parsing_flag = 1;
-
     if (line[0] == '\n') break;
 
     sscanf(line, "%d", &value);
