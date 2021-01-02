@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "linked_list.h"
 
+#define SOLVE2_VALUES_COUNT 1000000
+
 int
 linked_list_log_all(struct linked_list * const linked_list,
                     FILE * target) {
@@ -12,7 +14,7 @@ linked_list_log_all(struct linked_list * const linked_list,
   size_t i = 0;
 
   while (node) {
-    fprintf(target, "%2lu -> %d\n", i++, *(int *)node->value);
+    fprintf(target, "%2lu -> %d\n", i++, *(unsigned int *)node->value);
     node = node->next;
   }
 
@@ -53,15 +55,17 @@ get_destination_cup(struct linked_list * const cups,
                     struct linked_list * const pulled_cups,
                     struct linked_list_node * const current_node) {
   struct linked_list_node * node;
-  int destination_node_value = *(int *)current_node->value - 1;
+  unsigned int destination_node_value;
+
+  destination_node_value = *(unsigned int *)current_node->value - 1;
 
  again: node = pulled_cups->head;
 
   if (destination_node_value < 1)
-    destination_node_value = 9;
+    destination_node_value = 9; /* TODO customize max value */
 
   while (node != NULL) {
-    if (*(int *)node->value == destination_node_value) {
+    if (*(unsigned int *)node->value == destination_node_value) {
       destination_node_value -= 1;
       goto again;
     }
@@ -71,10 +75,36 @@ get_destination_cup(struct linked_list * const cups,
 
   node = cups->head;
 
-  while (*(int *)node->value != destination_node_value)
+  while (*(unsigned int *)node->value != destination_node_value)
     node = get_next_cup(cups, node);
 
   return node;
+}
+
+struct linked_list_node *
+get_destination_cup_from_list(struct linked_list * const pulled_cups,
+                              struct linked_list_node ** const all_cups,
+                              struct linked_list_node * const current_node) {
+  struct linked_list_node * node;
+  unsigned int destination_node_value;
+
+  destination_node_value = *(unsigned int *)current_node->value - 1;
+
+ again: node = pulled_cups->head;
+
+  if (destination_node_value < 1)
+    destination_node_value = 1000000;
+
+  while (node != NULL) {
+    if (*(unsigned int *)node->value == destination_node_value) {
+      destination_node_value -= 1;
+      goto again;
+    }
+
+    node = node->next;
+  }
+
+  return all_cups[destination_node_value];
 }
 
 char *
@@ -87,7 +117,7 @@ solve1(char * result, char input[10], unsigned int moves_count) {
   struct linked_list_node * pulled_cup;
   struct linked_list_node * current_cup;
   struct linked_list_node * destination_cup;
-  int values[9] = { 0 };
+  unsigned int values[9] = { 0 };
   unsigned int values_count = 9;
   const int pulled_cups_count = 3;
   size_t i;
@@ -123,13 +153,17 @@ solve1(char * result, char input[10], unsigned int moves_count) {
 
   current_cup = cups.head;
 
-  while (*(int *)current_cup->value != 1)
+  while (*(unsigned int *)current_cup->value != 1)
     current_cup = get_next_cup(&cups, current_cup);
 
-  for (i=0; result[i] != 0; i++) {
+  destination_cup = current_cup;
+  current_cup = get_next_cup(&cups, current_cup);
+
+  for (i=0; current_cup != destination_cup; i++) {
+    result[i] = *(unsigned int *)current_cup->value + '0';
     current_cup = get_next_cup(&cups, current_cup);
-    result[i] = *(int *)current_cup->value + '0';
   }
+  result[i] = 0;
 
   linked_list_destroy(&cups, 0);
   linked_list_destroy(&pulled_cups, 0);
@@ -137,13 +171,92 @@ solve1(char * result, char input[10], unsigned int moves_count) {
   return result;
 }
 
+unsigned long long
+solve2(char input[10], unsigned long moves_count) {
+  struct linked_list cups;
+  struct linked_list pulled_cups;
+  struct linked_list_node * pulled_cup;
+  struct linked_list_node * current_cup;
+  struct linked_list_node * destination_cup;
+  struct linked_list_node ** all_cups;
+  unsigned int * values;
+  const int pulled_cups_count = 3;
+  size_t i;
+  unsigned long long result = 1;
+
+  all_cups = malloc(SOLVE2_VALUES_COUNT * sizeof(struct linked_list_node *));
+
+  for (i=0; i<SOLVE2_VALUES_COUNT; i++)
+    all_cups[i] = malloc(sizeof(struct linked_list_node *));
+  
+  values = malloc(SOLVE2_VALUES_COUNT * sizeof(unsigned int *));
+
+  i = 0;
+  while (input[i] != 0) {
+    values[i] = (unsigned int)input[i]-'0';
+    all_cups[values[i]] = linked_list_node_create(&values[i]);
+    i++;
+  }
+
+  while (i < SOLVE2_VALUES_COUNT) {
+    values[i] = i+1;
+    all_cups[values[i]] = linked_list_node_create(&values[i]);
+    i++;
+  }
+
+  linked_list_init(&cups);
+  linked_list_init(&pulled_cups);
+
+  for (i=0; i<SOLVE2_VALUES_COUNT; i++)
+    linked_list_push_node(&cups, all_cups[values[i]]);
+
+  current_cup = cups.head;
+
+  for (i=0; i < moves_count; i++) {
+    pull_after_node_to_other_list(&cups, &pulled_cups, current_cup,
+                                  pulled_cups_count);
+
+    destination_cup = get_destination_cup_from_list(&pulled_cups, all_cups,
+                                                    current_cup);
+
+    while (pulled_cups.tail != NULL) {
+      pulled_cup = linked_list_pull_by_node(&pulled_cups, pulled_cups.tail);
+      linked_list_push_node_after(&cups, pulled_cup, destination_cup);
+    }
+
+    current_cup = get_next_cup(&cups, current_cup);
+  }
+
+  current_cup = cups.head;
+
+  while (*(unsigned int *)current_cup->value != 1)
+    current_cup = get_next_cup(&cups, current_cup);
+
+  current_cup = get_next_cup(&cups, current_cup);
+  result *= *(unsigned int *)current_cup->value;
+
+  current_cup = get_next_cup(&cups, current_cup);
+  result *= *(unsigned int *)current_cup->value;
+
+
+  linked_list_destroy(&cups, 0);
+  linked_list_destroy(&pulled_cups, 0);
+  free(all_cups);
+  free(values);
+
+  return result;
+}
+
 int
 main() {
-  char result[9] = "00000000";
+  char result[64];
   
   printf("%s (92658374)\n", solve1(result, "389125467", 10));
   printf("%s (67384529)\n", solve1(result, "389125467", 100));
   printf("%s (98752463)\n", solve1(result, "789465123", 100));
+
+  printf("%llu (149245887792)\n", solve2("389125467", 10000000));
+  printf("%llu (2000455861)\n",   solve2("789465123", 10000000));
 
   return 0;
 }
